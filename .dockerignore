@@ -1,0 +1,5 @@
+secrets
+.env
+.git
+node_modules
+test

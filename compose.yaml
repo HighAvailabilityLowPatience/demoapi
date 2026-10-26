@@ -1,0 +1,33 @@
+services:
+  demo-api:
+    build: .
+    container_name: demo-api
+    restart: "no"
+    environment:
+      API_TOKEN_FILE: /run/secrets/api_token
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    secrets:
+      - api_token
+    group_add:
+      - "${DOCKER_GID:?Set DOCKER_GID to the Docker socket group ID}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - demo-network
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+secrets:
+  api_token:
+    file: ./secrets/api_token
+networks:
+  demo-network:
+    external: true

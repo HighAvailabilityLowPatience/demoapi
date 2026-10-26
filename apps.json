@@ -1,0 +1,10 @@
+{
+  "astro": {
+    "container": "astro_calc",
+    "healthUrl": "http://astro_calc:8888/"
+  },
+  "change": {
+    "container": "change-calculator",
+    "healthUrl": "http://change-calculator:8888/"
+  }
+}
