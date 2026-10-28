@@ -4,7 +4,7 @@ import { requestContext, cors, authenticate, rateLimit, backendError } from './m
 import { livenessRoutes, healthRoutes } from './routes/health.js';
 import { appRoutes } from './routes/apps.js';
 import deploymentRoutes from './routes/deployments.js';
-import { createAppLock } from './services/locks.js';
+import { createAppLock } from './services/lock.js';
 import deployed from './config/deployed.js';
 import { createDeploymentDocker } from './services/deployment-docker.js';
 import {
