@@ -18,31 +18,34 @@ import {
  */
 export function createApi({ apps, token, docker, fetchHealth = fetch, origins = [], logger = console.log }) {
   if (!token || token.length < 32) throw new Error('API_TOKEN must contain at least 32 characters');
+    // Validate each application, then close the loop.
   for (const [id, app] of Object.entries(apps)) {
-    if (!/^[a-z0-9-]+$/.test(id) || !/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(app.container)) throw new Error('Invalid app registry');
-    if (!['http:', 'https:'].includes(new URL(app.healthUrl).protocol)) throw new Error('Invalid health URL');
-  // Create one lock shared by every operation that changes containers.
-const withAppLock = createAppLock();
+    if (
+      !/^[a-z0-9-]+$/.test(id) ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(app.container)
+    ) {
+      throw new Error('Invalid app registry');
+    }
 
-// Check that deployment settings match the registered applications.
-validateDeployments(deployed, apps);
-
-// Build the individual Docker deployment operations.
-const deploymentDocker = createDeploymentDocker(docker, fetchHealth);
-
-// Build the deployment workflow using those operations and our shared lock.
-// This function returns the redeploy handler.
-const redeploy = createDeploymentService({
-  docker: deploymentDocker,
-  withAppLock
-});
-
-// Existing status and health services.
-const services = createAppServices({ docker, fetchHealth });
-  
+    if (!['http:', 'https:'].includes(new URL(app.healthUrl).protocol)) {
+      throw new Error('Invalid health URL');
+    }
   }
-  const services = createAppServices({ docker, fetchHealth });
+
+  // Create ONE lock shared by lifecycle and deployment operations.
   const withAppLock = createAppLock();
+
+  validateDeployments(deployed, apps);
+
+  const deploymentDocker = createDeploymentDocker(docker, fetchHealth);
+
+  const redeploy = createDeploymentService({
+    docker: deploymentDocker,
+    withAppLock
+  });
+
+  const services = createAppServices({ docker, fetchHealth });
+
   const app = express();
   app.disable('x-powered-by');
   app.enable('strict routing');
