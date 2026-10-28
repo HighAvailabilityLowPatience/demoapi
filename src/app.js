@@ -50,7 +50,40 @@ const services = createAppServices({ docker, fetchHealth });
   app.use(requestContext(logger));
   app.use(cors(origins));
   app.use(livenessRoutes());
-  app.use(authenticate(token));
+  // Only GET /v1/apps/:id/status may bypass authentication.
+app.use(
+  '/v1/apps/:id/status',
+  function publicStatus(req, res, next) {
+    if (req.method !== 'GET') return next();
+
+    // The existing app router will handle this request below.
+    res.locals.publicStatus = true;
+    next();
+  }
+);
+  const requireAuthentication = authenticate(token);
+
+app.use(function managementAuthentication(req, res, next) {
+  // Public read-only status requests.
+  if (res.locals.publicStatus === true) {
+    return next();
+  }
+
+  // Public presentation controls: stop only these two calculators.
+  const isPublicStop =
+    req.method === 'POST' &&
+    (
+      req.path === '/v1/apps/astro/stop' ||
+      req.path === '/v1/apps/change/stop'
+    );
+
+  if (isPublicStop) {
+    return next();
+  }
+
+  // Every other management request still requires the token.
+  return requireAuthentication(req, res, next);
+});
   app.use(rateLimit());
   //ROUTES
   app.use(healthRoutes(apps, services));
